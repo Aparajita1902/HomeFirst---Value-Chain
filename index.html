@@ -379,7 +379,7 @@ body.fs .side{ display:none; }
     <nav class="nav" id="nav"></nav>
     <div class="route" id="route" hidden></div>
     <div class="side-foot"><b>Data</b>Public-data assessment to Q2 FY27, plus one labelled illustrative tab. Information cutoff 30 Oct 2026.
-      <div class="linkrow"><button id="methodBtn">Method &amp; sources</button><button id="presBtn">Presenter mode</button><a id="presLink" href="#" target="hf_presentation">Return to presentation</a><button id="resetBtn">Reset the demo</button></div></div>
+      <div class="linkrow"><button id="methodBtn">Method &amp; sources</button><button id="presBtn">Presenter mode</button><a id="presLink" href="#" target="hf_presentation">Return to discussion deck</a><a id="assessLink" href="#" target="hf_assessment">Outside-in assessment</a><button id="resetBtn">Reset the demo</button></div></div>
   </aside>
   <div class="main">
     <header class="top"><div class="filters" id="filters"></div></header>
@@ -698,7 +698,7 @@ const GUIDANCE=[
  {m:'Gross Stage 3 and credit cost',g:'About 1.7% and about 40 bps',type:'Level to maintain',src:'Q2 FY27 call, 48:18',date:'28 Oct 2026'}];
 const SOURCES={S1:'Investor presentation Q2 FY27 (27 Oct 2026)',S2:'Reviewed results, quarter to 30 Sep 2026',S3:'Investor presentation Q1 FY27',S4:'Integrated Annual Report FY26',S6:'Q2 FY27 earnings call audio (28 Oct 2026)',S7:'Investor presentation Q4 FY26',S8:'Q4 FY26 call transcript',S9:'Board outcome with FY25 results',S10:'RBI MPC minutes (21 Oct 2026)'};
 
-window.CLIENT={PRESENTATION:{claude:'',portable:'HomeFirst_Aistra_outside-in_deck.pdf'},QEND,DEMO:demo,name:'HomeFirst',full:'Home First Finance Company India Ltd.',PERIODS,CMP_MODES,model:modelD,N,TREES,PERSPECTIVES,KPIS,DIMS,GUIDANCE,SOURCES,funPath,EA,IBL,AVG_A_Q2,TAX_Q2,
+window.CLIENT={PRESENTATION:{claude:{discussion:'',assessment:''},portable:{discussion:'HomeFirst_AI_opportunities_discussion.pdf',assessment:'HomeFirst_outside-in_assessment.pdf'}},QEND,DEMO:demo,name:'HomeFirst',full:'Home First Finance Company India Ltd.',PERIODS,CMP_MODES,model:modelD,N,TREES,PERSPECTIVES,KPIS,DIMS,GUIDANCE,SOURCES,funPath,EA,IBL,AVG_A_Q2,TAX_Q2,
   footNote:'Public-data assessment: company results and disclosed splits to Q2 FY27. Information cutoff 30 Oct 2026.'};
 })();
 
@@ -871,17 +871,37 @@ function bindOv(p,st,AP){ A=AP;
 
 /* ---------- scenarios ---------- */
 const PRESETS=[
+ {k:'c1',kind:'cap',l:'Assessment base case',d:'25% AUM growth from FY26; output per employee in the current disclosed range; run-off 16.5%.',sc:{g:25,r:16.5,u:0}},
+ {k:'c2',kind:'cap',l:'Downside growth',d:'20% AUM growth from FY26; same productivity and run-off.',sc:{g:20,r:16.5,u:0}},
+ {k:'c3',kind:'cap',l:'Output 10% higher',d:'25% growth with output per employee 10% above the current range.',sc:{g:25,r:16.5,u:10}},
+ {k:'c4',kind:'cap',l:'Output 20% higher',d:'25% growth with output per employee 20% above the current range.',sc:{g:25,r:16.5,u:20}},
  {k:'i1',kind:'ins',l:'Draft insurance rule, management estimate',d:'Fee shock 35 bps of ROA, 10 bps concession, 20 bps assumed mitigation (Q2 FY27 call).',sc:{g:35,c:10,m:20}},
  {k:'i2',kind:'ins',l:'Insurance rule without offsets',d:'Fee shock 35 bps of ROA; no concession, no mitigation.',sc:{g:35,c:0,m:0}},
  {k:'f1',kind:'fun',l:'October 2026 rate rise',d:'Repo +25 bps; 25% passes through in quarter 1, 40% from quarter 2; reprice one quarter after a 10 bps move.',sc:{r:25,s:25,p:40,t:10,l:1,e:100,show:1}},
  {k:'f2',kind:'fun',l:'A second rise in December',d:'Repo +50 bps in total, same transmission and repricing.',sc:{r:50,s:25,p:40,t:10,l:1,e:100,show:1}},
  {k:'f3',kind:'fun',l:'Rate rise, half the book reprices',d:'Repo +25 bps; only half of loans reprice after the trigger.',sc:{r:25,s:25,p:40,t:10,l:1,e:50,show:2}}];
-const LEVERS={ins:[{k:'g',l:'Fee-income shock',min:0,max:50,step:1,f:v=>`${v} bps of ROA`},{k:'c',l:'Expected concession',min:0,max:50,step:1,f:v=>`${v} bps`},{k:'m',l:'Assumed mitigation',min:0,max:50,step:1,f:v=>`${v} bps`}],
+const LEVERS={cap:[{k:'g',l:'AUM growth a year, FY27–FY30',min:15,max:30,step:1,f:v=>v+'%'},{k:'u',l:'Output per employee above the current range',min:0,max:30,step:1,f:v=>'+'+v+'%'},{k:'r',l:'Run-off of opening AUM a year',min:14,max:18,step:0.5,f:v=>v+'%'}],ins:[{k:'g',l:'Fee-income shock',min:0,max:50,step:1,f:v=>`${v} bps of ROA`},{k:'c',l:'Expected concession',min:0,max:50,step:1,f:v=>`${v} bps`},{k:'m',l:'Assumed mitigation',min:0,max:50,step:1,f:v=>`${v} bps`}],
  fun:[{k:'r',l:'Policy rate change',min:-50,max:50,step:5,f:v=>`${v>0?'+':v<0?A.MINUS:''}${Math.abs(v)} bps`},{k:'l',l:'Repricing lag after the trigger',min:0,max:2,step:1,f:v=>v===1?'1 quarter':v+' quarters'},{k:'e',l:'Share of loans repriced',min:0,max:100,step:5,f:v=>v+'%'},{k:'s',l:'Passed through in quarter 1',min:0,max:100,step:5,f:v=>v+'%'},{k:'p',l:'Total pass-through from quarter 2',min:0,max:100,step:5,f:v=>v+'%'},{k:'t',l:'Repricing trigger',min:10,max:15,step:1,f:v=>v+' bps'},{k:'show',l:'Quarter shown',min:0,max:3,step:1,f:v=>'Quarter '+(v+1)}]};
 function scOf(st){ const s=st.sc[st.scKind]; return {...s,kind:st.scKind}; }
 function isZero(sc){ return sc.kind==='ins'? !sc.g : !sc.r; }
 function annDelta(sc){ const B=A.vals('Q2FY27'), X=A.vals('Q2FY27',sc); return (X.pat-B.pat)*4; }
-function viewSc(st,AP){ A=AP; const sc=scOf(st); const B=A.vals('Q2FY27'), X=isZero(sc)?B:A.vals('Q2FY27',sc);
+const FAMILIES=st=>`<div class="seg" role="group" aria-label="Scenario family"><button data-kind="cap" class="${st.scKind==='cap'?'on':''}">Growth capacity</button><button data-kind="ins" class="${st.scKind==='ins'?'on':''}">Insurance income</button><button data-kind="fun" class="${st.scKind==='fun'?'on':''}">Rate transmission and repricing lag</button></div>`;
+function capPath(c){ const AUM0=15878, HC=2014, lo=3.1, hi=3.5; const k=1+c.u/100; const out=[]; let open=AUM0;
+  for(let y=27;y<=30;y++){ const close=open*(1+c.g/100); const disb=close-open+c.r/100*open; out.push({y:'FY'+y,aum:close,disb,sLo:disb/(hi*k),sHi:disb/(lo*k),cLo:disb/hi,cHi:disb/lo}); open=close; }
+  return {rows:out,HC,AUM0}; }
+function capView(st){ const c=st.sc.cap; const P=capPath(c), last=P.rows[3]; const preset=PRESETS.find(p=>p.k===st.preset)||PRESETS.find(p=>p.kind==='cap'&&p.sc.g===c.g&&p.sc.r===c.r&&p.sc.u===c.u); if(preset) st.preset=preset.k;
+  const lib=PRESETS.filter(p=>p.kind==='cap').map(p=>{ const L=capPath({...p.sc}).rows[3]; return `<button class="preset ${st.preset===p.k?'on':''}" data-ps="${p.k}"><span class="rd"></span><b>${A.esc(p.l)}</b><span>${A.esc(p.d)}</span><em>FY30 staffing sensitivity: ${A.num(L.sLo,0)}–${A.num(L.sHi,0)}</em></button>`; }).join('');
+  const res=(t,v,d)=>`<div class="res"><div class="t">${t}</div><div class="v">${v}</div><div class="d">${d}</div></div>`;
+  const avoided=c.u>0?`${A.num(last.cLo-last.sLo,0)}–${A.num(last.cHi-last.sHi,0)}`:'–';
+  return `<div class="rp-top"><div class="ph" style="margin:0"><h2>Scenarios</h2><p>Growth capacity is a staffing sensitivity on public figures; the other two families are set on Q2 FY27 balances. One family at a time.</p></div>${FAMILIES(st)}</div>
+   <div class="presets">${lib}</div>
+   <div class="sc-grid"><div class="box"><div class="box-h"><h3>Inputs</h3><button class="btn" id="scReset">Reset</button></div>${LEVERS.cap.map(l=>`<div class="lever"><div class="lh"><label for="lv-${l.k}">${l.l}</label><span id="lvv-${l.k}">${l.f(c[l.k])}</span></div><input type="range" id="lv-${l.k}" data-lv="${l.k}" min="${l.min}" max="${l.max}" step="${l.step}" value="${c[l.k]}"></div>`).join('')}
+    <dl class="dl" style="margin-top:14px"><dt>What it is</dt><dd>A constant-productivity staffing sensitivity, not a staffing forecast. Disbursals needed = growth in AUM + run-off of opening AUM; staff = disbursals ÷ output per employee.</dd><dt>Basis</dt><dd>FY26 AUM ₹15,878 Cr; output per employee in the current disclosed range of ₹3.1–3.5 Cr a year (current measures and management commentary); 2,014 employees at 30 Sep 2026.</dd><dt>Not shown</dt><dd>How individual functions scale, the role mix, and any rupee value of hiring avoided.</dd><dt>Source</dt><dd>Outside-in assessment, slide 4; HomeFirst Q2 FY27 investor presentation and calls.</dd></dl></div>
+   <div class="box"><div class="box-h"><div><h3>${A.esc(preset?preset.l:'Custom inputs')}</h3><div class="sub">FY30, against 2,014 employees today</div></div><button class="btn pri" id="capOp">Open the Operating view</button></div>
+    <div class="res-cards">${res('AUM, FY30',A.num(last.aum,0)+' Cr',A.num(last.aum/P.AUM0,1)+'x FY26')}${res('Disbursals, FY30',A.num(last.disb,0)+' Cr',A.num(last.disb/5424,1)+'x FY26')}${res('Staffing sensitivity, FY30',A.num(last.sLo,0)+'–'+A.num(last.sHi,0),c.u>0?'at output '+c.u+'% above the current range':'at the current productivity range')}${res('Staff avoided against the current range',avoided,c.u>0?'otherwise-required employees':'set output above the current range')}</div>
+    ${A.tableHTML(['Year','AUM, ₹ Cr','Disbursals, ₹ Cr','Staffing sensitivity'],P.rows.map(r=>[r.y,A.num(r.aum,0),A.num(r.disb,0),A.num(r.sLo,0)+'–'+A.num(r.sHi,0)]))}
+    <div class="deck-note">The base case reproduces the assessment: ₹12,870 Cr of FY30 disbursals and 3,700–4,200 employees at the current productivity range.</div></div></div>`; }
+function viewSc(st,AP){ A=AP; if(st.scKind==='cap') return capView(st); const sc=scOf(st); const B=A.vals('Q2FY27'), X=isZero(sc)?B:A.vals('Q2FY27',sc);
   const card=(l,a,b,u,dir)=>{ const dl=A.delta(u,a,b,dir); return `<div class="res"><div class="t">${l}</div><div class="v">${A.fvs(u,a)}</div><div class="d ${dl.cls}-t">${isZero(sc)?'Actual':(dl.txt||'no change')+' vs actual'}</div></div>`; };
   const lib=PRESETS.filter(p=>p.kind===st.scKind).map(p=>{ const d=annDelta({...p.sc,kind:p.kind}); return `<button class="preset ${st.preset===p.k?'on':''}" data-ps="${p.k}"><span class="rd"></span><b>${A.esc(p.l)}</b><span>${A.esc(p.d)}</span><em>Change in annualised PAT: ${d>=0?'+':A.MINUS}₹${A.num(Math.abs(d),1)} cr${p.kind==='fun'?` (quarter ${p.sc.show+1})`:''}</em></button>`; }).join('');
   const rows=[['il','Loan interest income'],['ie','Funding expense'],['oth','Fees, treasury and other'],['mit','Assumed mitigation'],['tax','Tax'],['pat','Profit after tax']];
@@ -889,8 +909,8 @@ function viewSc(st,AP){ A=AP; const sc=scOf(st); const B=A.vals('Q2FY27'), X=isZ
   let path=''; if(st.scKind==='fun'&&!isZero(sc)){ const ps=[0,1,2,3].map(i=>{ const Y=A.vals('Q2FY27',{...sc,show:i}); return {q:i+1,d:(Y.pat-B.pat)*4}; });
     path=`<div class="h4">Quarter by quarter after the change</div>${A.tableHTML(['','Q1','Q2','Q3','Q4'],[['Change in annualised PAT, ₹ cr',...ps.map(x=>sgn(x.d,1))]])}<div class="deck-note">First-year effect (sum of the four quarters ÷ 4): ${sgn(ps.reduce((a,x)=>a+x.d,0)/4,1)} cr. Run-rate after repricing: quarter 4.</div>`; }
   const disc= st.scKind==='ins'? [['What changes','Fees fall by the shock after concession, grossed up for tax; assumed mitigation is added as a separate, unallocated line.'],['Held constant','Balance-sheet size and mix, leverage, all other lines.'],['Horizon and basis','Annual run-rate at Q2 FY27 scale; effective date of the rule undisclosed; tax 23.4%; average assets ₹16,381 Cr.'],['Excluded','Customer and partner responses, cost of mitigation, timing.']]
-   : [['What changes','Borrowing cost on borrowings (70.4% of average assets); after the trigger and lag, the lending rate on the share of loans that reprices (earning loans 88.9%).'],['Held constant','Volumes, mix, leverage, credit cost, prepayments, balance transfers.'],['Horizon and basis','Four quarters from the change; quarterly flows annualised; tax 23.4%; eligible exposure set by the share repriced.'],['Excluded','Refinancing of maturing borrowings beyond the pass-through; customer behaviour after repricing; RBI draft rate-setting rules beyond the trigger.'],['Not the same as','The deck’s structural funding drag (slide 11), which models a growing balance sheet funded with a smaller equity share to FY30. This case tests a short-term rate change at today’s balance sheet.']];
-  return `<div class="rp-top"><div class="ph" style="margin:0"><h2>Scenarios</h2><p>Illustrative cases set on Q2 FY27 balances. Actuals are unchanged; one family at a time. ₹ crore.</p></div><div class="seg" role="group" aria-label="Scenario family"><button data-kind="ins" class="${st.scKind==='ins'?'on':''}">Insurance income</button><button data-kind="fun" class="${st.scKind==='fun'?'on':''}">Rate transmission and repricing lag</button></div></div>
+   : [['What changes','Borrowing cost on borrowings (70.4% of average assets); after the trigger and lag, the lending rate on the share of loans that reprices (earning loans 88.9%).'],['Held constant','Volumes, mix, leverage, credit cost, prepayments, balance transfers.'],['Horizon and basis','Four quarters from the change; quarterly flows annualised; tax 23.4%; eligible exposure set by the share repriced.'],['Excluded','Refinancing of maturing borrowings beyond the pass-through; customer behaviour after repricing; RBI draft rate-setting rules beyond the trigger.'],['Not the same as','The outside-in assessment’s structural funding drag (slide 10), which models a growing balance sheet funded with a smaller equity share to FY30. This case tests a short-term rate change at today’s balance sheet.']];
+  return `<div class="rp-top"><div class="ph" style="margin:0"><h2>Scenarios</h2><p>Illustrative cases set on Q2 FY27 balances. Actuals are unchanged; one family at a time. ₹ crore.</p></div>${FAMILIES(st)}</div>
    <div class="presets">${lib}</div>
    <div class="sc-grid"><div class="box"><div class="box-h"><h3>Inputs</h3><button class="btn" id="scReset">Clear</button></div>${LEVERS[st.scKind].map(l=>{ const v=st.sc[st.scKind][l.k]; const max=st.scKind==='ins'&&l.k==='c'?st.sc.ins.g:st.scKind==='ins'&&l.k==='m'?Math.max(0,st.sc.ins.g-st.sc.ins.c):l.max; return `<div class="lever"><div class="lh"><label for="lv-${l.k}">${l.l}</label><span id="lvv-${l.k}">${l.f(v)}</span></div><input type="range" id="lv-${l.k}" data-lv="${l.k}" min="${l.min}" max="${max}" step="${l.step}" value="${v}"></div>`; }).join('')}
     <dl class="dl" style="margin-top:14px">${disc.map(([a,b])=>`<dt>${a}</dt><dd>${b}</dd>`).join('')}</dl></div>
@@ -903,6 +923,7 @@ function bindSc(p,st,AP){ A=AP;
   p.querySelectorAll('[data-ps]').forEach(b=>b.onclick=()=>{ const pr=PRESETS.find(x=>x.k===b.dataset.ps); st.sc[pr.kind]={kind:pr.kind,...JSON.parse(JSON.stringify(AP.DEF_SC[pr.kind])),...pr.sc}; st.preset=pr.k; AP.renderPage(); });
   p.querySelectorAll('[data-lv]').forEach(inp=>{ inp.oninput=()=>{ const k=inp.dataset.lv; st.sc[st.scKind][k]=+inp.value; st.preset=null; const lv=LEVERS[st.scKind].find(l=>l.k===k); document.getElementById('lvv-'+k).textContent=lv.f(+inp.value); };
     inp.onchange=()=>{ const s=st.sc.ins; if(st.scKind==='ins'){ s.c=Math.min(s.c,s.g); s.m=Math.min(s.m,Math.max(0,s.g-s.c)); } const y=window.scrollY; AP.renderPage(); window.scrollTo(0,y); }; });
+  const co=p.querySelector('#capOp'); if(co) co.onclick=()=>AP.go('tree',{persp:'op',treeSc:null});
   const r=p.querySelector('#scReset'); if(r) r.onclick=()=>{ st.sc[st.scKind]=JSON.parse(JSON.stringify(AP.DEF_SC[st.scKind])); st.preset=null; AP.renderPage(); };
   const s=p.querySelector('#scShow'); if(s) s.onclick=()=>{ const sc=scOf(st); const pr=PRESETS.find(x=>x.k===st.preset); st.presetName=pr?pr.l:'Custom inputs';
     st.treeSc=sc; st.p='Q2FY27'; st.dim={k:null,m:null};
@@ -1005,7 +1026,8 @@ function bindAl(p,st,AP){ A=AP; p.querySelectorAll('[data-at]').forEach(b=>b.onc
   p.querySelectorAll('[data-wn]').forEach(b=>b.onclick=()=>{ if(b.dataset.wo){ const [t,i]=b.dataset.wo.split(':'); const st2={...st,p:'Q2FY27'}; (t==='cluster'?openCluster:openGroup)(+i,st2); } else AP.openNode(b.dataset.wn); }); }
 
 /* ---------- method and sources ---------- */
-function method(AP){ A=AP; return `<h3>Method &amp; sources</h3><div class="sub">Platform v1.0 (Horizon standard). HomeFirst configuration v1.0. Build 31 Oct 2026.</div>
+function method(AP){ A=AP; return `<h3>Method &amp; sources</h3><div class="sub">Platform v1.4 (Horizon standard). HomeFirst configuration v1.4. Build 2 Nov 2026.</div>
+ <div class="h4">Companion documents</div><p><b>Outside-in assessment</b>: what public disclosures show about HomeFirst’s economics, growth requirements, capabilities and uncertainties. <b>AI opportunities discussion deck</b>: where AI could change the operating model, and which areas to explore together. <b>This value-tree demo</b>: how management could explore performance, drivers, scenarios and exceptions.</p>
  <div class="h4">Data layers</div><p><b>Public-data assessment</b>: company results, ratios and disclosed portfolio splits, Q4 FY25 to Q2 FY27. Every box shows its layer in the detail panel. <b>Illustrative operating demonstration</b>: synthetic branch-cluster, sourcing-group, monthly, collection and plan figures with neutral names, on the “Branch &amp; channel (illustrative)” tab, report R06, alerts A7–A8 and the plan comparison. Labelled wherever it appears; cluster and group totals equal the public company figures for Q1 and Q2 FY27.</p>
  <div class="h4">Periods and comparisons</div><p>Quarterly amounts stay quarterly; ratios are as published (annualised, average balances). Comparisons: same quarter last year or previous quarter; year to date and financial year against the previous year. Management guidance is shown as a separate reference.</p>
  <div class="h4">Conventions</div><p>Percentage change for amounts; percentage points for ratios. Higher expense shows as worse. No percentage change where the comparator is zero or negative. Not disclosed is shown as such, never as zero. NII is the company definition; lease interest sits in operating expenses.</p>
@@ -1031,7 +1053,7 @@ const MINUS='\u2212';
 const P_BY=Object.fromEntries(C.PERIODS.map(p=>[p.k,p]));
 
 /* ---------- state ---------- */
-const DEF_SC={ins:{kind:'ins',g:0,c:0,m:0},fun:{kind:'fun',r:0,s:25,p:40,t:10,l:1,e:100,show:1}};
+const DEF_SC={ins:{kind:'ins',g:0,c:0,m:0},fun:{kind:'fun',r:0,s:25,p:40,t:10,l:1,e:100,show:1},cap:{kind:'cap',g:25,r:16.5,u:0}};
 const state={view:'ov',p:'Q2FY27',cmp:'ly',persp:'biz',dim:{k:null,m:null},collapsed:{},zoom:{},full:null,sel:null,
   scKind:'ins',sc:JSON.parse(JSON.stringify(DEF_SC)),preset:null,treeSc:null,presetName:'',rpFilter:'all',convo:[],alertSel:null,alertTab:'feed',route:0,presenter:false,scNote:''};
 Object.entries(C.TREES).forEach(([key,def])=>Object.entries(def.collapsed||{}).forEach(([id,v])=>state.collapsed[key+':'+id]=v));
@@ -1238,8 +1260,8 @@ function renderPage(){ const p=$('#page'); const v=state.view; const CT=window.C
 function renderAll(){ if(state.view==='tree'&&state.persp==='demo') demoCmp(); renderNav(); renderFilters(); renderPage(); renderRoute(); }
 
 /* ---------- guided meeting route ---------- */
-const ROUTE=[['Overview: what changed',()=>go('ov')],['Business tree: which lines explain it',()=>go('tree',{persp:'biz',treeSc:null})],['Operating driver: the activity beneath',()=>go('tree',{persp:'op',treeSc:null})],['Scenario: what a change could mean',()=>go('sc',{scKind:'ins'})],['Board view: returns and capital'+'',()=>go('tree',{persp:'board'})],['Alerts: repeated management use',()=>go('al')]];
-function routeIdx(){ const v=state.view; if(v==='ov') return 0; if(v==='tree') return state.persp==='biz'?1:state.persp==='op'?2:4; if(v==='sc') return 3; if(v==='al') return 5; return -1; }
+const ROUTE=[['Overview: what changed',()=>go('ov')],['Business tree: which lines explain it',()=>go('tree',{persp:'biz',treeSc:null})],['Operating view: capacity and credit',()=>go('tree',{persp:'op',treeSc:null})],['Growth capacity: staffing sensitivity',()=>go('sc',{scKind:'cap'})],['Board view: returns and capital',()=>go('tree',{persp:'board'})],['Branch and channel (illustrative): a cluster alert',()=>{ state.alertSel='A7'; go('tree',{persp:'demo',treeSc:null}); }]];
+function routeIdx(){ const v=state.view; if(v==='ov') return 0; if(v==='tree') return state.persp==='biz'?1:state.persp==='op'?2:state.persp==='board'?4:state.persp==='demo'?5:-1; if(v==='sc') return 3; return -1; }
 function renderRoute(){ const el=$('#route'); if(!el) return; el.hidden=!state.presenter; const pb=$('#presBtn'); if(pb) pb.textContent=state.presenter?'Hide presenter route':'Presenter mode'; state.route=routeIdx(); el.innerHTML=`<b>Meeting route</b>${ROUTE.map(([l],i)=>`<button data-rt="${i}" class="${state.route===i?'on':''}">${i+1}. ${esc(l)}</button>`).join('')}`;
   el.querySelectorAll('[data-rt]').forEach(b=>b.onclick=()=>{ ROUTE[+b.dataset.rt][1](); });
   if(state.treeSc&&state.presenter) el.insertAdjacentHTML('beforeend',`<span style="color:var(--side-mute);font-size:12px;margin-top:4px">Scenario active: the Board step keeps it.</span>`); }
@@ -1250,11 +1272,11 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeDrawer(); $(
 $('#modal').onclick=e=>{ if(e.target.id==='modal') $('#modal').classList.remove('on'); };
 $('#resetBtn').onclick=()=>{ state.p='Q2FY27'; state.cmp='ly'; state.dim={k:null,m:null}; state.treeSc=null; state.sc=JSON.parse(JSON.stringify(DEF_SC)); state.preset=null; state.convo=[]; state.persp='biz'; go('ov'); };
 $('#methodBtn').onclick=()=>modal(window.CONTENT.method(API));
-{ const pl=$('#presLink'); if(pl&&C.PRESENTATION) pl.href=C.PRESENTATION[window.DELIVERY==='claude'?'claude':'portable']; }
+{ const mode=window.DELIVERY==='claude'?'claude':'portable'; const L=C.PRESENTATION&&C.PRESENTATION[mode]; const a=$('#presLink'), b=$('#assessLink'); if(L){ if(a) a.href=L.discussion; if(b) b.href=L.assessment; } }
 { const pb=$('#presBtn'); if(pb) pb.onclick=()=>{ state.presenter=!state.presenter; renderRoute(); }; }
 function fromHash(){ const h=(location.hash||'').slice(1);
   if(h==='presenter'){ state.presenter=true; return; }
-  const map={illustrative:['tree',{persp:'demo'}],overview:['ov'],tree:['tree',{persp:'biz'}],scenarios:['sc'],insurance:['sc',{scKind:'ins'}],funding:['sc',{scKind:'fun'}],reports:['rp'],ask:['ask'],alerts:['al'],board:['tree',{persp:'board'}],operating:['tree',{persp:'op'}],bridge:['tree',{persp:'board',openBridge:true}]};
+  const map={capacity:['sc',{scKind:'cap'}],illustrative:['tree',{persp:'demo'}],overview:['ov'],tree:['tree',{persp:'biz'}],scenarios:['sc'],insurance:['sc',{scKind:'ins'}],funding:['sc',{scKind:'fun'}],reports:['rp'],ask:['ask'],alerts:['al'],board:['tree',{persp:'board'}],operating:['tree',{persp:'op'}],bridge:['tree',{persp:'board',openBridge:true}]};
   const m=map[h]; if(m){ state.view=m[0]; if(m[1]) Object.assign(state,m[1]); } }
 const API={basisText,openPanel,renderKPIs,C,state,vals,curS,cmpS,cmpLabel,cmpKey,P_BY,nd,num,rs,fv,fvs,delta,esc,go,openNode,modal,tableHTML,renderAll,renderPage,linkSrc,docUrl,nodeValue,MINUS,DEF_SC};
 window.PLATFORM=API;
